@@ -1,5 +1,6 @@
 import type { SavedReference } from '../types'
 import { generateCsv, downloadCsv } from '../utils'
+import { cn } from '../utils/cn'
 
 interface ExportButtonProps {
   references: SavedReference[]
@@ -17,9 +18,14 @@ export function ExportButton({ references }: ExportButtonProps) {
     <button
       onClick={handleExport}
       disabled={references.length === 0}
-      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+      className={cn(
+        'rounded-lg bg-dark-700 border border-glass-border px-4 py-2',
+        'text-xs font-medium text-subtle',
+        'hover:bg-dark-600 hover:text-white transition-all',
+        'disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-dark-700',
+      )}
     >
-      CSV 내보내기 ({references.length}건)
+      CSV Export ({references.length})
     </button>
   )
 }

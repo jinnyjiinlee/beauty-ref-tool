@@ -10,46 +10,67 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video, onSave, isSaving }: VideoCardProps) {
+  const saved = isSaving
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className={cn(
+      'group rounded-xl bg-dark-800 border border-glass-border overflow-hidden',
+      'hover:border-dark-400 hover:bg-dark-700/50 transition-all duration-200',
+    )}>
       <a
         href={`https://youtube.com/watch?v=${video.videoId}`}
         target="_blank"
         rel="noopener noreferrer"
+        className="relative block"
       >
         <img
           src={video.thumbnailUrl}
           alt={video.title}
           className="w-full aspect-video object-cover"
         />
-      </a>
-
-      <div className="p-4 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold line-clamp-2 flex-1">
-            {video.title}
-          </h3>
+        <div className={cn(
+          'absolute inset-0 bg-black/0 group-hover:bg-black/20',
+          'transition-colors flex items-center justify-center',
+        )}>
+          <span className={cn(
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'bg-black/70 backdrop-blur-sm rounded-full px-3 py-1',
+            'text-[11px] text-white font-medium',
+          )}>
+            YouTube에서 보기
+          </span>
+        </div>
+        <div className="absolute bottom-2 right-2">
           <FormatBadge tag={video.formatTag} />
         </div>
+      </a>
 
-        <p className="text-xs text-gray-500">{video.channelTitle}</p>
+      <div className="p-3.5 space-y-2">
+        <h3 className="text-[13px] font-medium text-white line-clamp-2 leading-snug">
+          {video.title}
+        </h3>
 
-        <div className="flex items-center gap-3 text-xs text-gray-600">
-          <span>조회수 {formatViewCount(video.viewCount)}</span>
-          <span>참여율 {video.engagementRate.toFixed(2)}%</span>
+        <p className="text-xs text-subtle">{video.channelTitle}</p>
+
+        <div className="flex items-center gap-1.5 text-[11px] text-dark-400">
+          <span>{formatViewCount(video.viewCount)} views</span>
+          <span className="text-dark-500">|</span>
+          <span>{video.engagementRate.toFixed(1)}% engagement</span>
+          <span className="text-dark-500">|</span>
           <span>{formatDate(video.publishedAt)}</span>
         </div>
 
         <button
           onClick={() => onSave(video)}
-          disabled={isSaving}
+          disabled={saved}
           className={cn(
-            'mt-2 w-full rounded-lg bg-pink-50 px-4 py-2 text-sm',
-            'font-medium text-pink-600 hover:bg-pink-100',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'mt-1 w-full rounded-lg py-2 text-xs font-semibold transition-all',
+            saved
+              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-default'
+              : 'bg-glass border border-glass-border text-white hover:bg-accent/15 hover:text-accent hover:border-accent/30',
           )}
         >
-          {isSaving ? '저장 중...' : '저장하기'}
+          {saved ? 'Saved' : 'Save'}
         </button>
       </div>
     </div>

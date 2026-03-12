@@ -16,8 +16,8 @@ export function ViewCountFilter({
 }: ViewCountFilterProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        최소 조회수
+      <label className="block text-xs font-medium text-subtle mb-2 uppercase tracking-wider">
+        Min Views
       </label>
       <div className="flex gap-2 flex-wrap">
         {VIEW_COUNT_PRESETS.map((preset) => (
@@ -26,10 +26,10 @@ export function ViewCountFilter({
             type="button"
             onClick={() => { onPresetClick(preset.value); onCustomChange('') }}
             className={cn(
-              'rounded-full px-4 py-1 text-sm border',
+              'rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all',
               !customViewCount && minViewCount === preset.value
-                ? 'bg-pink-500 text-white border-pink-500'
-                : 'border-gray-300 hover:border-pink-300',
+                ? 'bg-accent/20 text-accent border border-accent/40'
+                : 'bg-dark-700 text-subtle border border-glass-border hover:border-dark-400',
             )}
           >
             {preset.label}
@@ -40,7 +40,11 @@ export function ViewCountFilter({
           value={customViewCount}
           onChange={(e) => onCustomChange(e.target.value)}
           placeholder="직접 입력"
-          className="w-32 rounded-lg border border-gray-300 px-3 py-1 text-sm focus:border-pink-500 focus:outline-none"
+          className={cn(
+            'w-28 rounded-lg bg-dark-700 border border-glass-border px-3 py-1.5',
+            'text-xs text-white placeholder-dark-400',
+            'focus:border-accent/50 focus:outline-none transition-all',
+          )}
         />
       </div>
     </div>

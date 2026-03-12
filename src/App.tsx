@@ -22,59 +22,36 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-4">
-          <h1 className="text-xl font-bold text-pink-600">
-            Beauty Shortform Reference
-          </h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-dark-900">
+      <Header />
+      <Nav activeTab={activeTab} onTabChange={(tab) => {
+        setActiveTab(tab)
+        if (tab === 'saved') void refs.refresh()
+      }} />
 
-      <nav className="border-b bg-white">
-        <div className="mx-auto max-w-5xl px-4 flex gap-4">
-          <TabButton
-            label="검색"
-            active={activeTab === 'search'}
-            onClick={() => setActiveTab('search')}
-          />
-          <TabButton
-            label="저장된 레퍼런스"
-            active={activeTab === 'saved'}
-            onClick={() => { setActiveTab('saved'); void refs.refresh() }}
-          />
-        </div>
-      </nav>
-
-      <main className="mx-auto max-w-5xl px-4 py-6 space-y-6">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         {activeTab === 'search' && (
-          <>
+          <div className="space-y-8 animate-fade-in">
             <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-            {error && (
-              <p className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-                {error}
-              </p>
-            )}
+            {error && <ErrorBanner message={error} />}
             {results.length > 0 && (
-              <p className="text-sm text-gray-500">
-                검색 결과 {results.length}건
+              <p className="text-sm text-subtle">
+                {results.length}개의 숏폼을 찾았습니다
               </p>
             )}
-            <VideoGrid videos={results} searchKeywords={lastKeywords} />
-          </>
+            <VideoGrid videos={results} searchKeywords={lastKeywords} isLoading={isLoading} />
+          </div>
         )}
 
         {activeTab === 'saved' && (
-          <>
+          <div className="space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">저장된 레퍼런스</h2>
+              <h2 className="text-lg font-semibold text-white">
+                저장된 레퍼런스
+              </h2>
               <ExportButton references={refs.references} />
             </div>
-            {refs.error && (
-              <p className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-                {refs.error}
-              </p>
-            )}
+            {refs.error && <ErrorBanner message={refs.error} />}
             <ReferenceList
               references={refs.references}
               isLoading={refs.isLoading}
@@ -82,10 +59,52 @@ function App() {
               onFilterTag={refs.filterByTag}
               onDelete={(id) => void refs.remove(id)}
             />
-          </>
+          </div>
         )}
       </main>
     </div>
+  )
+}
+
+function Header() {
+  return (
+    <header className="border-b border-glass-border bg-dark-800/80 backdrop-blur-xl sticky top-0 z-50">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center gap-3">
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-accent to-pink-400 flex items-center justify-center">
+          <span className="text-white text-sm font-bold">B</span>
+        </div>
+        <h1 className="text-lg font-bold text-white tracking-tight">
+          Beauty Ref
+        </h1>
+        <span className="text-xs text-subtle font-medium ml-1">
+          Shortform
+        </span>
+      </div>
+    </header>
+  )
+}
+
+interface NavProps {
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+}
+
+function Nav({ activeTab, onTabChange }: NavProps) {
+  return (
+    <nav className="border-b border-glass-border bg-dark-800/50 backdrop-blur-md">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 flex gap-1">
+        <TabButton
+          label="검색"
+          active={activeTab === 'search'}
+          onClick={() => onTabChange('search')}
+        />
+        <TabButton
+          label="저장됨"
+          active={activeTab === 'saved'}
+          onClick={() => onTabChange('saved')}
+        />
+      </div>
+    </nav>
   )
 }
 
@@ -100,14 +119,23 @@ function TabButton({ label, active, onClick }: TabButtonProps) {
     <button
       onClick={onClick}
       className={cn(
-        'border-b-2 px-4 py-3 text-sm font-medium',
-        active
-          ? 'border-pink-500 text-pink-600'
-          : 'border-transparent text-gray-500 hover:text-gray-700',
+        'relative px-5 py-3 text-sm font-medium transition-colors',
+        active ? 'text-white' : 'text-subtle hover:text-white',
       )}
     >
       {label}
+      {active && (
+        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full" />
+      )}
     </button>
+  )
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
+      {message}
+    </div>
   )
 }
 

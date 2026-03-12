@@ -22,22 +22,25 @@ export function PeriodFilter({
   onStartChange,
   onEndChange,
 }: PeriodFilterProps) {
+  const chipBase = 'rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all'
+  const chipActive = 'bg-accent/20 text-accent border border-accent/40'
+  const chipInactive = 'bg-dark-700 text-subtle border border-glass-border hover:border-dark-400'
+
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        기간
+      <label className="block text-xs font-medium text-subtle mb-2 uppercase tracking-wider">
+        Period
       </label>
-      <div className="flex gap-2 flex-wrap items-center">
+      <div className="flex gap-2 flex-wrap">
         {PERIOD_PRESETS.map((preset) => (
           <button
             key={preset.months}
             type="button"
             onClick={() => onPresetClick(preset.months)}
             className={cn(
-              'rounded-full px-4 py-1 text-sm border',
+              chipBase,
               !useCustomPeriod && periodMonths === preset.months
-                ? 'bg-pink-500 text-white border-pink-500'
-                : 'border-gray-300 hover:border-pink-300',
+                ? chipActive : chipInactive,
             )}
           >
             {preset.label}
@@ -46,30 +49,31 @@ export function PeriodFilter({
         <button
           type="button"
           onClick={onCustomToggle}
-          className={cn(
-            'rounded-full px-4 py-1 text-sm border',
-            useCustomPeriod
-              ? 'bg-pink-500 text-white border-pink-500'
-              : 'border-gray-300 hover:border-pink-300',
-          )}
+          className={cn(chipBase, useCustomPeriod ? chipActive : chipInactive)}
         >
           직접 입력
         </button>
       </div>
       {useCustomPeriod && (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2 items-center animate-fade-in">
           <input
             type="date"
             value={startDate}
             onChange={(e) => onStartChange(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-1 text-sm"
+            className={cn(
+              'rounded-lg bg-dark-700 border border-glass-border px-3 py-1.5',
+              'text-xs text-white focus:border-accent/50 focus:outline-none',
+            )}
           />
-          <span className="self-center text-gray-500">~</span>
+          <span className="text-dark-400 text-xs">~</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => onEndChange(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-1 text-sm"
+            className={cn(
+              'rounded-lg bg-dark-700 border border-glass-border px-3 py-1.5',
+              'text-xs text-white focus:border-accent/50 focus:outline-none',
+            )}
           />
         </div>
       )}

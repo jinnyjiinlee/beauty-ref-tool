@@ -45,47 +45,58 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl bg-dark-800 border border-glass-border p-6 space-y-5"
+    >
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          키워드 (쉼표로 구분)
+        <label className="block text-xs font-medium text-subtle mb-2 uppercase tracking-wider">
+          Keywords
         </label>
         <input
           type="text"
           value={keywordInput}
           onChange={(e) => setKeywordInput(e.target.value)}
-          placeholder="예: 립글로스, 쿠션 파운데이션"
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-pink-500 focus:outline-none"
+          placeholder="립글로스, 쿠션 파운데이션, 선크림"
+          className={cn(
+            'w-full rounded-xl bg-dark-700 border border-glass-border px-4 py-3',
+            'text-white placeholder-dark-400 text-sm',
+            'focus:border-accent/50 focus:ring-1 focus:ring-accent/30 focus:outline-none',
+            'transition-all',
+          )}
         />
       </div>
 
-      <ViewCountFilter
-        minViewCount={minViewCount}
-        customViewCount={customViewCount}
-        onPresetClick={setMinViewCount}
-        onCustomChange={setCustomViewCount}
-      />
-
-      <PeriodFilter
-        periodMonths={periodMonths}
-        useCustomPeriod={useCustomPeriod}
-        startDate={startDate}
-        endDate={endDate}
-        onPresetClick={(m) => { setPeriodMonths(m); setUseCustomPeriod(false) }}
-        onCustomToggle={() => setUseCustomPeriod(true)}
-        onStartChange={setStartDate}
-        onEndChange={setEndDate}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <ViewCountFilter
+          minViewCount={minViewCount}
+          customViewCount={customViewCount}
+          onPresetClick={setMinViewCount}
+          onCustomChange={setCustomViewCount}
+        />
+        <PeriodFilter
+          periodMonths={periodMonths}
+          useCustomPeriod={useCustomPeriod}
+          startDate={startDate}
+          endDate={endDate}
+          onPresetClick={(m) => { setPeriodMonths(m); setUseCustomPeriod(false) }}
+          onCustomToggle={() => setUseCustomPeriod(true)}
+          onStartChange={setStartDate}
+          onEndChange={setEndDate}
+        />
+      </div>
 
       <button
         type="submit"
         disabled={isLoading}
         className={cn(
-          'w-full rounded-lg bg-pink-500 px-6 py-3 font-semibold text-white',
-          'hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed',
+          'w-full rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white',
+          'hover:bg-accent-light active:scale-[0.98] transition-all',
+          'disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
+          isLoading && 'animate-pulse',
         )}
       >
-        {isLoading ? '검색 중...' : '검색'}
+        {isLoading ? '검색 중...' : '숏폼 검색'}
       </button>
     </form>
   )
