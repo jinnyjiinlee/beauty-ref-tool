@@ -14,7 +14,7 @@ const mockRef: SavedReference = {
   likeCount: 50000,
   commentCount: 2000,
   engagementRate: 5.2,
-  formatTag: '리뷰',
+  formatTag: '제품리뷰',
   keywords: ['립스틱', '추천'],
   savedAt: '2024-07-01T00:00:00Z',
   memo: '좋은 영상',

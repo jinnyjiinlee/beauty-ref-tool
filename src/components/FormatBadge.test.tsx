@@ -9,8 +9,8 @@ describe('FormatBadge', () => {
   })
 
   it('리뷰 태그를 렌더링한다', () => {
-    render(<FormatBadge tag="리뷰" />)
-    expect(screen.getByText('리뷰')).toBeInTheDocument()
+    render(<FormatBadge tag="제품리뷰" />)
+    expect(screen.getByText('제품리뷰')).toBeInTheDocument()
   })
 
   it('기타 태그를 렌더링한다', () => {

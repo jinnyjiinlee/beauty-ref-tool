@@ -11,7 +11,7 @@ interface ReferenceListProps {
   onDelete: (id: string) => void
 }
 
-const ALL_TAGS: FormatTag[] = ['ASMR', '루틴', '리뷰', '후킹형', '기타']
+const ALL_TAGS: FormatTag[] = ['ASMR', '스킨케어루틴', '제품리뷰', '후킹형', '기타']
 
 export function ReferenceList({
   references,
