@@ -2,19 +2,26 @@ import { useState } from 'react'
 import type { VideoResult } from '../types'
 import { saveReference } from '../api'
 import { VideoCard } from './VideoCard'
+import { VideoListItem } from './VideoListItem'
 import { SkeletonCard } from './SkeletonCard'
+import { EmptyState } from './EmptyState'
+
+type ViewMode = 'grid' | 'list'
 
 interface VideoGridProps {
   videos: VideoResult[]
   searchKeywords: string[]
   isLoading?: boolean
+  viewMode?: ViewMode
+  onChannelClick?: (channelId: string, channelTitle: string) => void
+  hasSearched?: boolean
 }
 
-export function VideoGrid({ videos, searchKeywords, isLoading }: VideoGridProps) {
+export function VideoGrid({ videos, searchKeywords, isLoading, viewMode = 'grid', onChannelClick, hasSearched }: VideoGridProps) {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
 
-  const handleSave = async (video: VideoResult) => {
+  const handleSave = async (video: VideoResult): Promise<void> => {
     setSavingId(video.videoId)
     try {
       await saveReference({ video, keywords: searchKeywords, memo: '' })
@@ -28,23 +35,34 @@ export function VideoGrid({ videos, searchKeywords, isLoading }: VideoGridProps)
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
+      <div className="space-y-4">
+        <p className="text-sm text-subtle animate-pulse">검색 중...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     )
   }
 
   if (videos.length === 0) {
+    return <EmptyState hasSearched={hasSearched} />
+  }
+
+  if (viewMode === 'list') {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-dark-700 flex items-center justify-center mb-4">
-          <span className="text-2xl">Q</span>
-        </div>
-        <p className="text-subtle text-sm">
-          키워드를 입력하고 숏폼을 검색해보세요
-        </p>
+      <div className="flex flex-col gap-3">
+        {videos.map((video, i) => (
+          <div key={video.videoId} className="animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
+            <VideoListItem
+              video={video}
+              onSave={handleSave}
+              isSaving={savingId === video.videoId || savedIds.has(video.videoId)}
+              onChannelClick={onChannelClick}
+            />
+          </div>
+        ))}
       </div>
     )
   }
@@ -57,6 +75,7 @@ export function VideoGrid({ videos, searchKeywords, isLoading }: VideoGridProps)
             video={video}
             onSave={handleSave}
             isSaving={savingId === video.videoId || savedIds.has(video.videoId)}
+            onChannelClick={onChannelClick}
           />
         </div>
       ))}

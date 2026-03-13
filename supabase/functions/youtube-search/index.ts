@@ -1,6 +1,9 @@
 // Supabase Edge Function: YouTube 검색
 // Deno Deploy 런타임에서 실행됨
 
+import { corsHeaders, jsonResponse } from '../_shared/response.ts'
+import { detectTag } from '../_shared/tags.ts'
+
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3'
 
 interface RequestBody {
@@ -8,6 +11,9 @@ interface RequestBody {
   minViewCount: number
   publishedAfter: string
   publishedBefore: string
+  regionCode?: string
+  relevanceLanguage?: string
+  channelId?: string
 }
 
 interface VideoResult {
@@ -15,6 +21,7 @@ interface VideoResult {
   title: string
   description: string
   thumbnailUrl: string
+  channelId: string
   channelTitle: string
   publishedAt: string
   viewCount: number
@@ -45,6 +52,9 @@ Deno.serve(async (req: Request) => {
         keyword,
         body.publishedAfter,
         body.publishedBefore,
+        body.regionCode,
+        body.relevanceLanguage,
+        body.channelId,
       )
       allResults.push(...videos)
     }
@@ -67,8 +77,13 @@ async function searchAndEnrich(
   keyword: string,
   publishedAfter: string,
   publishedBefore: string,
+  regionCode?: string,
+  relevanceLanguage?: string,
+  channelId?: string,
 ): Promise<VideoResult[]> {
-  const searchUrl = buildSearchUrl(apiKey, keyword, publishedAfter, publishedBefore)
+  const searchUrl = buildSearchUrl(
+    apiKey, keyword, publishedAfter, publishedBefore, regionCode, relevanceLanguage, channelId,
+  )
   const searchRes = await fetch(searchUrl)
   const searchData = await searchRes.json()
 
@@ -86,6 +101,9 @@ function buildSearchUrl(
   keyword: string,
   publishedAfter: string,
   publishedBefore: string,
+  regionCode?: string,
+  relevanceLanguage?: string,
+  channelId?: string,
 ): string {
   const params = new URLSearchParams({
     part: 'snippet',
@@ -98,6 +116,9 @@ function buildSearchUrl(
     publishedBefore,
     key: apiKey,
   })
+  if (regionCode) params.set('regionCode', regionCode)
+  if (relevanceLanguage) params.set('relevanceLanguage', relevanceLanguage)
+  if (channelId) params.set('channelId', channelId)
   return `${YOUTUBE_API_BASE}/search?${params}`
 }
 
@@ -123,6 +144,7 @@ function mapToVideoResult(item: {
     title: string
     description: string
     thumbnails: { high?: { url: string } }
+    channelId: string
     channelTitle: string
     publishedAt: string
   }
@@ -143,6 +165,7 @@ function mapToVideoResult(item: {
     title: item.snippet.title,
     description: item.snippet.description,
     thumbnailUrl: item.snippet.thumbnails.high?.url ?? '',
+    channelId: item.snippet.channelId,
     channelTitle: item.snippet.channelTitle,
     publishedAt: item.snippet.publishedAt,
     viewCount: views,
@@ -153,18 +176,6 @@ function mapToVideoResult(item: {
   }
 }
 
-function detectTag(text: string): string {
-  const rules: [string, string[]][] = [
-    ['ASMR', ['asmr', '에이에스엠알', '팅글']],
-    ['루틴', ['루틴', 'routine', '모닝', '나이트', '겟레디', 'grwm']],
-    ['리뷰', ['리뷰', 'review', '솔직', '언박싱', '하울', '추천', '비교']],
-    ['후킹형', ['충격', '역대급', '난리', '대박', '미쳤', '레전드', '혜자']],
-  ]
-  for (const [tag, keywords] of rules) {
-    if (keywords.some((kw) => text.includes(kw))) return tag
-  }
-  return '기타'
-}
 
 function deduplicateByVideoId(videos: VideoResult[]): VideoResult[] {
   const seen = new Set<string>()
@@ -175,20 +186,3 @@ function deduplicateByVideoId(videos: VideoResult[]): VideoResult[] {
   })
 }
 
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers':
-      'authorization, x-client-info, apikey, content-type',
-  }
-}
-
-function jsonResponse(
-  body: Record<string, unknown>,
-  status = 200,
-): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders() },
-  })
-}

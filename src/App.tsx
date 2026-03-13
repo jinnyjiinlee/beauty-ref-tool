@@ -1,140 +1,161 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { Header } from './components/Header'
+import { Nav } from './components/Nav'
+import { ErrorBanner } from './components/ErrorBanner'
 import { SearchBar } from './components/SearchBar'
 import { VideoGrid } from './components/VideoGrid'
-import { ReferenceList } from './components/ReferenceList'
-import { ExportButton } from './components/ExportButton'
+import { StatsSummary } from './components/StatsSummary'
+import { SortDropdown } from './components/SortDropdown'
+import { ViewToggle } from './components/ViewToggle'
+import { ChannelList } from './components/ChannelList'
+import { FormatStatsPanel } from './components/FormatStatsPanel'
+import { ChannelRanking } from './components/ChannelRanking'
+import { HeroSection } from './components/HeroSection'
+import { ScrollToTop } from './components/ScrollToTop'
 import { useSearch } from './hooks/useSearch'
-import { useReferences } from './hooks/useReferences'
-import { cn } from './utils/cn'
+import { useChannels } from './hooks/useChannels'
+import { calcSearchStats, sortVideos, calcFormatStats, calcChannelRanking } from './utils'
+import { DEFAULT_SORT, DEFAULT_COUNTRY_CODE } from './constants'
+import { COUNTRY_PRESETS } from './constants'
+import { getDateMonthsAgo } from './utils'
+import type { SortKey, SearchFilters } from './types'
 
-type Tab = 'search' | 'saved'
+type Tab = 'search' | 'channels'
+type ViewMode = 'grid' | 'list'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('search')
   const [lastKeywords, setLastKeywords] = useState<string[]>([])
+  const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT)
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [channelLabel, setChannelLabel] = useState<string | null>(null)
+  const [hasSearched, setHasSearched] = useState(false)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   const { results, isLoading, error, search } = useSearch()
-  const refs = useReferences()
+  const chs = useChannels()
 
-  const handleSearch = async (filters: Parameters<typeof search>[0]) => {
+  const stats = useMemo(() => calcSearchStats(results), [results])
+  const formatStats = useMemo(() => calcFormatStats(results), [results])
+  const channelRanking = useMemo(() => calcChannelRanking(results), [results])
+  const sortedResults = useMemo(() => sortVideos(results, sortKey), [results, sortKey])
+
+  const handleSearch = async (filters: SearchFilters) => {
     setLastKeywords(filters.keywords)
+    setChannelLabel(null)
+    setHasSearched(true)
     await search(filters)
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const handleChannelDig = async (channelId: string, channelTitle: string) => {
+    setChannelLabel(channelTitle)
+    setActiveTab('search')
+    const defaultLang = COUNTRY_PRESETS.find((c) => c.code === DEFAULT_COUNTRY_CODE)
+    const filters: SearchFilters = {
+      keywords: [''],
+      minViewCount: 0,
+      publishedAfter: getDateMonthsAgo(12),
+      publishedBefore: new Date().toISOString(),
+      regionCode: DEFAULT_COUNTRY_CODE,
+      relevanceLanguage: defaultLang?.language ?? 'ko',
+      channelId,
+    }
+    setLastKeywords([channelTitle])
+    await search(filters)
+  }
+
+  const handleChannelClick = async (channelId: string, channelTitle: string) => {
+    try { await chs.add(channelId, channelTitle) } catch { /* ignore */ }
+    void handleChannelDig(channelId, channelTitle)
   }
 
   return (
     <div className="min-h-screen bg-dark-900">
       <Header />
-      <Nav activeTab={activeTab} onTabChange={(tab) => {
-        setActiveTab(tab)
-        if (tab === 'saved') void refs.refresh()
-      }} />
+      <Nav
+        activeTab={activeTab}
+        resultCount={results.length}
+        channelCount={chs.channels.length}
+        onTabChange={(tab) => {
+          setActiveTab(tab)
+          if (tab === 'channels') void chs.refresh()
+        }}
+      />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         {activeTab === 'search' && (
-          <div className="space-y-8 animate-fade-in">
+          <div className="space-y-6 animate-fade-in">
+            {results.length === 0 && !isLoading && <HeroSection />}
             <SearchBar onSearch={handleSearch} isLoading={isLoading} />
             {error && <ErrorBanner message={error} />}
-            {results.length > 0 && (
-              <p className="text-sm text-subtle">
-                {results.length}개의 숏폼을 찾았습니다
-              </p>
+            {channelLabel && (
+              <ChannelBanner label={channelLabel} onClear={() => setChannelLabel(null)} />
             )}
-            <VideoGrid videos={results} searchKeywords={lastKeywords} isLoading={isLoading} />
+            <StatsSummary stats={stats} />
+            {formatStats.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <FormatStatsPanel stats={formatStats} />
+                <ChannelRanking channels={channelRanking} onChannelClick={handleChannelClick} />
+              </div>
+            )}
+            {sortedResults.length > 0 && (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-subtle">
+                  {sortedResults.length}편의 숏폼
+                </p>
+                <div className="flex items-center gap-3">
+                  <SortDropdown value={sortKey} onChange={setSortKey} />
+                  <ViewToggle mode={viewMode} onChange={setViewMode} />
+                </div>
+              </div>
+            )}
+            <div ref={resultsRef}>
+              <VideoGrid
+                videos={sortedResults}
+                searchKeywords={lastKeywords}
+                isLoading={isLoading}
+                viewMode={viewMode}
+                onChannelClick={handleChannelClick}
+                hasSearched={hasSearched}
+              />
+            </div>
           </div>
         )}
 
-        {activeTab === 'saved' && (
+        {activeTab === 'channels' && (
           <div className="space-y-6 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">
-                저장된 레퍼런스
-              </h2>
-              <ExportButton references={refs.references} />
+            <div>
+              <h2 className="text-lg font-semibold text-white">즐겨찾기 채널</h2>
+              <p className="text-xs text-dark-400 mt-1">클릭하면 해당 채널의 영상을 검색합니다</p>
             </div>
-            {refs.error && <ErrorBanner message={refs.error} />}
-            <ReferenceList
-              references={refs.references}
-              isLoading={refs.isLoading}
-              activeTag={refs.activeTag}
-              onFilterTag={refs.filterByTag}
-              onDelete={(id) => void refs.remove(id)}
+            {chs.error && <ErrorBanner message={chs.error} />}
+            <ChannelList
+              channels={chs.channels}
+              isLoading={chs.isLoading}
+              onDigChannel={handleChannelDig}
+              onDelete={(id) => void chs.remove(id)}
             />
           </div>
         )}
       </main>
+      <ScrollToTop />
     </div>
   )
 }
 
-function Header() {
+function ChannelBanner({ label, onClear }: { label: string; onClear: () => void }) {
   return (
-    <header className="border-b border-glass-border bg-dark-800/80 backdrop-blur-xl sticky top-0 z-50">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center gap-3">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-accent to-pink-400 flex items-center justify-center">
-          <span className="text-white text-sm font-bold">B</span>
-        </div>
-        <h1 className="text-lg font-bold text-white tracking-tight">
-          Beauty Ref
-        </h1>
-        <span className="text-xs text-subtle font-medium ml-1">
-          Shortform
-        </span>
-      </div>
-    </header>
-  )
-}
-
-interface NavProps {
-  activeTab: Tab
-  onTabChange: (tab: Tab) => void
-}
-
-function Nav({ activeTab, onTabChange }: NavProps) {
-  return (
-    <nav className="border-b border-glass-border bg-dark-800/50 backdrop-blur-md">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 flex gap-1">
-        <TabButton
-          label="검색"
-          active={activeTab === 'search'}
-          onClick={() => onTabChange('search')}
-        />
-        <TabButton
-          label="저장됨"
-          active={activeTab === 'saved'}
-          onClick={() => onTabChange('saved')}
-        />
-      </div>
-    </nav>
-  )
-}
-
-interface TabButtonProps {
-  label: string
-  active: boolean
-  onClick: () => void
-}
-
-function TabButton({ label, active, onClick }: TabButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'relative px-5 py-3 text-sm font-medium transition-colors',
-        active ? 'text-white' : 'text-subtle hover:text-white',
-      )}
-    >
-      {label}
-      {active && (
-        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full" />
-      )}
-    </button>
-  )
-}
-
-function ErrorBanner({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
-      {message}
+    <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-2.5">
+      <span className="text-sm text-accent font-medium">
+        채널 디깅: {label}
+      </span>
+      <button
+        onClick={onClear}
+        className="ml-auto text-xs text-dark-400 hover:text-white transition-colors"
+      >
+        닫기
+      </button>
     </div>
   )
 }

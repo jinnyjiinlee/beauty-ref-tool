@@ -7,14 +7,23 @@ describe('detectFormatTag', () => {
     expect(detectFormatTag('팅글 립', '')).toBe('ASMR')
   })
 
-  it('루틴 키워드를 감지한다', () => {
-    expect(detectFormatTag('모닝 루틴', '')).toBe('루틴')
-    expect(detectFormatTag('GRWM 겟레디', '')).toBe('루틴')
+  it('GRWM 키워드를 감지한다', () => {
+    expect(detectFormatTag('GRWM 겟레디', '')).toBe('GRWM')
+    expect(detectFormatTag('같이준비해요', '')).toBe('GRWM')
   })
 
-  it('리뷰 키워드를 감지한다', () => {
-    expect(detectFormatTag('솔직 리뷰', '')).toBe('리뷰')
-    expect(detectFormatTag('', '언박싱 하울')).toBe('리뷰')
+  it('스킨케어루틴 키워드를 감지한다', () => {
+    expect(detectFormatTag('모닝 루틴', '')).toBe('스킨케어루틴')
+    expect(detectFormatTag('스킨케어 꿀팁', '')).toBe('스킨케어루틴')
+  })
+
+  it('제품리뷰 키워드를 감지한다', () => {
+    expect(detectFormatTag('솔직 리뷰', '')).toBe('제품리뷰')
+    expect(detectFormatTag('', '인생템 추천')).toBe('제품리뷰')
+  })
+
+  it('하울 키워드를 감지한다', () => {
+    expect(detectFormatTag('올리브영 하울', '')).toBe('하울')
   })
 
   it('후킹형 키워드를 감지한다', () => {

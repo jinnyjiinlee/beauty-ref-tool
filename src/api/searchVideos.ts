@@ -17,6 +17,9 @@ export async function searchVideos(
         minViewCount: filters.minViewCount,
         publishedAfter: filters.publishedAfter,
         publishedBefore: filters.publishedBefore,
+        regionCode: filters.regionCode,
+        relevanceLanguage: filters.relevanceLanguage,
+        channelId: filters.channelId,
       },
     },
   )
